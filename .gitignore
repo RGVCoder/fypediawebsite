@@ -1,0 +1,17 @@
+.DS_Store
+
+# Local secrets and environment files
+.env
+.env.*
+!.env.example
+Secrets.xcconfig
+Secrets.*.xcconfig
+*.pem
+*.key
+*.p12
+
+# Local development artifacts
+node_modules/
+.next/
+coverage/
+*.log
