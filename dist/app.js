@@ -55,7 +55,7 @@ const DEFAULT_STATE = {
   recentTopicIDs: [],
   selectedTopicId: null,
   nav: "home",
-  screen: "auth",
+  screen: "landing",
   authMode: "signup",
   theme: "dark",
   onboardingTopics: [],
@@ -77,7 +77,7 @@ function loadState() {
     const saved = JSON.parse(localStorage.getItem("fypedia-web-state") || "null");
     const next = { ...DEFAULT_STATE, ...(saved || {}) };
     const localPreview = USE_MOCK_DATA;
-    next.screen = !localPreview || new URLSearchParams(location.search).has("insforge_code") ? "loading" : next.profile?.onboardingCompleted ? "app" : next.profile ? "onboarding" : "auth";
+    next.screen = !localPreview || new URLSearchParams(location.search).has("insforge_code") ? "loading" : next.profile?.onboardingCompleted ? "app" : next.profile ? "onboarding" : "landing";
     if (localPreview && !next.profile) {
       next.profile = null;
       next.stats = structuredClone(DEFAULT_STATE.stats);
@@ -168,6 +168,7 @@ async function hydrateBrowserSession() {
     const user = result?.data?.user;
     if (!user) {
       state = { ...DEFAULT_STATE, theme: state.theme };
+      state.screen = hasOAuthCode ? "auth" : "landing";
       if (hasOAuthCode) state.errorMessage = "Google sign-in could not be completed. Please try again.";
       saveState();
       render();
@@ -230,6 +231,7 @@ function render() {
   document.querySelector('meta[name="theme-color"]').content = state.theme === "light" ? "#f4efe4" : "#0f1214";
   const app = document.getElementById("app");
   if (state.screen === "loading") app.innerHTML = '<main class="auth-page"><div class="auth-panel loading-panel" role="status"><img src="assets/fypedia-logo.png" alt="Fypedia" /><p>Restoring your session…</p></div></main>';
+  else if (state.screen === "landing") app.innerHTML = renderLanding();
   else if (state.screen === "auth") app.innerHTML = renderAuth();
   else if (state.screen === "verification") app.innerHTML = renderVerification();
   else if (state.screen === "onboarding") app.innerHTML = renderOnboarding();
@@ -257,6 +259,51 @@ function selectedTopic() { return topicById(state.selectedTopicId || ownedTopics
 function safeText(value) { return String(value ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[ch])); }
 function topicArtwork(topic, className = "topic-art") { return `<div class="${className}" style="background-image: linear-gradient(180deg, rgba(10,12,13,.04), rgba(10,12,13,.67)), url('${topic.image}')"><span class="topic-art-icon">${safeText(topic.icon)}</span></div>`; }
 function button(label, action, className = "button") { return `<button class="${className}" data-action="${action}">${label}</button>`; }
+
+function renderLanding() {
+  const topics = ["Black holes", "Neural networks", "Personal finance", "Python programming", "Human anatomy"];
+  return `<main class="landing-page">
+    <nav class="landing-nav" aria-label="Main navigation">
+      <a class="brand" href="#top" aria-label="Fypedia home"><img src="assets/fypedia-logo.png" alt="" /><span class="brand-name">Fypedia</span></a>
+      <div class="landing-nav-actions"><span class="landing-nav-note">Already learning?</span><button class="button ghost small" data-action="open-auth-signin">Log in</button></div>
+    </nav>
+    <div class="landing-wrap" id="top">
+      <section class="landing-hero" aria-labelledby="landing-title">
+        <div class="landing-copy">
+          <h1 id="landing-title">Make your scroll count.</h1>
+          <p class="landing-lede">Fypedia turns educational Shorts into focused study sessions, so your curiosity has somewhere to go after the video ends.</p>
+          <div class="landing-actions">${button("Start learning", "start-learning", "button landing-primary")}<a class="landing-text-link" href="#how-it-works">See how it works <span aria-hidden="true">↓</span></a></div>
+          <p class="landing-note"><span class="landing-note-mark" aria-hidden="true"></span> Choose a topic, watch a few clips, keep the key idea.</p>
+        </div>
+        <div class="landing-demo" aria-label="Example Fypedia study session">
+          <div class="landing-demo-head"><div><span class="landing-demo-label">Example session</span><strong>Today’s study stack</strong></div><span class="landing-time">10 min</span></div>
+          <div class="landing-demo-rule"></div>
+          <div class="landing-session-row landing-session-row-active"><span class="landing-step">01</span><div><strong>Watch a short</strong><span>A focused clip on neural networks</span></div><span class="landing-row-state">Now</span></div>
+          <div class="landing-session-row"><span class="landing-step">02</span><div><strong>Answer one question</strong><span>Turn the idea into something you can use</span></div><span class="landing-row-state">Next</span></div>
+          <div class="landing-session-row"><span class="landing-step">03</span><div><strong>Keep the thread</strong><span>Return to your topics whenever you’re ready</span></div><span class="landing-row-state">Later</span></div>
+          <div class="landing-demo-foot"><span class="landing-live-dot"></span><span>Built around your curiosity</span><span class="landing-foot-arrow" aria-hidden="true">↗</span></div>
+        </div>
+      </section>
+
+      <section class="landing-loop" id="how-it-works" aria-labelledby="loop-title">
+        <div class="landing-section-intro"><h2 id="loop-title">Start small. Leave with something.</h2><p>Fypedia gives short-form learning a little more shape without making it feel like homework.</p></div>
+        <div class="landing-steps">
+          <div class="landing-step-item"><span class="landing-step-number">01</span><div><h3>Pick your thread</h3><p>Choose the ideas you want to spend time with, from black holes to personal finance.</p></div></div>
+          <div class="landing-step-item"><span class="landing-step-number">02</span><div><h3>Watch with intention</h3><p>Get a short set of relevant educational clips instead of an endless, open-ended feed.</p></div></div>
+          <div class="landing-step-item"><span class="landing-step-number">03</span><div><h3>Check what stuck</h3><p>Answer a quick question after each clip and build a clearer sense of what you learned.</p></div></div>
+        </div>
+      </section>
+
+      <section class="landing-topics" aria-labelledby="topics-title">
+        <div><h2 id="topics-title">Follow the question<br class="landing-desktop-break" /> you can’t stop thinking about.</h2></div>
+        <div class="landing-topic-cloud">${topics.map((topic, index) => `<span class="landing-topic-pill ${index === 0 ? "is-featured" : ""}">${safeText(topic)}</span>`).join("")}</div>
+      </section>
+
+      <section class="landing-cta" aria-labelledby="cta-title"><div><h2 id="cta-title">Your next ten minutes<br /> can be about anything.</h2></div>${button("Build my study feed →", "start-learning", "button landing-primary")}</section>
+      <footer class="landing-footer"><a class="brand" href="#top"><img src="assets/fypedia-logo.png" alt="" /><span class="brand-name">Fypedia</span></a><span>Short-form learning, with a little more intention.</span></footer>
+    </div>
+  </main>`;
+}
 
 function renderAuth() {
   const signUp = state.authMode === "signup";
@@ -538,6 +585,7 @@ function addTopicTitle(title) {
 }
 
 async function handleAction(action, target) {
+  if (action === "start-learning" || action === "open-auth-signin") { state.authMode = action === "open-auth-signin" ? "signin" : "signup"; state.errorMessage = null; state.screen = "auth"; render(); return; }
   if (action === "toggle-auth") { state.authMode = state.authMode === "signup" ? "signin" : "signup"; render(); return; }
   if (action === "sign-in-google") {
     if (state.busy) return;
